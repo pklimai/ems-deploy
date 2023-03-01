@@ -1,0 +1,15 @@
+ems1 ansible_host=10.254.0.202
+ems2 ansible_host=10.254.0.203
+
+[event_catalogue]
+ems1
+ems2
+
+[haproxy]
+ems1
+ems2
+
+[keepalived]
+ems1
+ems2
+
