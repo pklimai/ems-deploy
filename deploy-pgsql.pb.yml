@@ -32,7 +32,24 @@
       with_items:
         - postgresql
 
+    - name: Set password
+      ansible.builtin.user:
+        name: postgres
+        password: $6$VsaRMZ7Zzj3Mb1ux$Nc6pKq0aQD5CZ74yAGKmRt2fSftOJfNhYF/YJEiSRwYiLJ/BlqjEHZkqNXneuCuEJwpw2Y/qbEAPQnx7itnXX.
+  
+    # Set password for postgres user ?
+
+    # Enable in pg_hba.conf (replace peer with password):
+    # local   all             all                                     password
+
+    - postgresql_db:
+        name: event_db
+        login_password: example
+
   handlers:
     - name: restart postgres
       service: name=postgresql state=restarted
+
+- hosts: event_catalogue_master
+  
 

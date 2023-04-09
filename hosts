@@ -5,6 +5,12 @@ ems2 ansible_host=10.254.0.203
 ems1
 ems2
 
+[event_catalogue_master]
+ems1
+
+[event_catalogue_replica]
+ems2
+
 [haproxy]
 ems1
 ems2
