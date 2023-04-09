@@ -1,33 +1,33 @@
 ---
-- hosts: all
+- name: Deploy PostgreSQL on Event Catalogue hosts
+  hosts: event_catalogue
   become: yes
 
 #  vars_files:
 #    - vars.yml
 
-  pre_tasks:
-    - name: "Install packages"
+  tasks:
+    - name: Install packages
       dnf: "name={{ item }} state=present"
       with_items:
         - postgresql
         - postgresql-server
 
-    - name: "Install Python packages"
+    - name: Install Python packages
       pip: "name={{ item }}  state=present"
       with_items:
         - psycopg2-binary
 
-  tasks:
-    - name: "Find out if PostgreSQL is initialized"
+    - name: Check if PostgreSQL is initialized
       ansible.builtin.stat:
         path: "/var/lib/pgsql/data/pg_hba.conf"
       register: postgres_data
 
-    - name: "Initialize PostgreSQL"
+    - name: Initialize PostgreSQL
       shell: "postgresql-setup initdb"
       when: not postgres_data.stat.exists
  
-    - name: "Start and enable services"
+    - name: Start and enable services
       service: "name={{ item }} state=started enabled=yes"
       with_items:
         - postgresql
@@ -51,38 +51,37 @@
         login_user: postgres
         login_password: example 
 
-    # TODO: Enable listen '*' -- not needed for Ansible, but needed for EMS later
-
-    # Enable in pg_hba.conf (replace peer with password):
-    # sudo vi /var/lib/pgsql/data/pg_hba.conf
-    # add as FIRST rule: 
-    # local   all             postgres                                md5
-    # sudo systemctl restart postgresql 
-
-    - name: add new configuration to "pg_hba.conf"
+    - name: Add configuration to pg_hba.conf
       blockinfile:
         dest: /var/lib/pgsql/data/pg_hba.conf
-        insertafter: "# TYPE  DATABASE        USER            ADDRESS                 METHOD"
+        insertafter: 
+          "# TYPE  DATABASE        USER            ADDRESS                 METHOD"
         block: |
           local   all             all             	                   md5
           host    all             all             0.0.0.0/0                md5
           host    replication     replicant       0.0.0.0/0                md5
-      #notify: restart postgres
 
-    - name: "Restart postgres"
+    - name: Add new configuration to postgresql.conf
+      blockinfile:
+        dest: /var/lib/pgsql/data/postgresql.conf
+        block: |
+          listen_addresses = '*'
+
+    - name: Restart postgres
       service: "name={{ item }} state=restarted"
       with_items:
         - postgresql
 
-    - postgresql_db: 
+    - name: Create new database
+      postgresql_db: 
         name: event_db
         login_password: example
 
+#  handlers:
+#    - name: restart postgres
+#      service: name=postgresql state=restarted
 
-  handlers:
-    - name: restart postgres
-      service: name=postgresql state=restarted
-
-- hosts: event_catalogue_master
+- name: Play for EMS master db
+  hosts: event_catalogue_master
   
 
