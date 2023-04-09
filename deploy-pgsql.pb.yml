@@ -51,12 +51,30 @@
         login_user: postgres
         login_password: example 
 
-    # Enable listen '*' ?
+    # TODO: Enable listen '*' -- not needed for Ansible, but needed for EMS later
 
     # Enable in pg_hba.conf (replace peer with password):
+    # sudo vi /var/lib/pgsql/data/pg_hba.conf
+    # add as FIRST rule: 
     # local   all             postgres                                md5
+    # sudo systemctl restart postgresql 
 
-    - postgresql_db:
+    - name: add new configuration to "pg_hba.conf"
+      blockinfile:
+        dest: /var/lib/pgsql/data/pg_hba.conf
+        insertafter: "# TYPE  DATABASE        USER            ADDRESS                 METHOD"
+        block: |
+          local   all             all             	                   md5
+          host    all             all             0.0.0.0/0                md5
+          host    replication     replicant       0.0.0.0/0                md5
+      #notify: restart postgres
+
+    - name: "Restart postgres"
+      service: "name={{ item }} state=restarted"
+      with_items:
+        - postgresql
+
+    - postgresql_db: 
         name: event_db
         login_password: example
 
