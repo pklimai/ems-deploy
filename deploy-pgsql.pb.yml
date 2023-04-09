@@ -32,19 +32,34 @@
       with_items:
         - postgresql
 
-    - name: Set password
+    - name: Set password Linux user
       ansible.builtin.user:
         name: postgres
         password: $6$VsaRMZ7Zzj3Mb1ux$Nc6pKq0aQD5CZ74yAGKmRt2fSftOJfNhYF/YJEiSRwYiLJ/BlqjEHZkqNXneuCuEJwpw2Y/qbEAPQnx7itnXX.
   
-    # Set password for postgres user ?
+    # Is it needed ?
+    - name: Set password for postgres user
+      become: yes
+      become_method: su
+      become_user: postgres
+      vars:
+        ansible_become_password: example
+      postgresql_user:
+        db: postgres
+        name: postgres
+        password: example
+        login_user: postgres
+        login_password: example 
+
+    # Enable listen '*' ?
 
     # Enable in pg_hba.conf (replace peer with password):
-    # local   all             all                                     password
+    # local   all             postgres                                md5
 
     - postgresql_db:
         name: event_db
         login_password: example
+
 
   handlers:
     - name: restart postgres
