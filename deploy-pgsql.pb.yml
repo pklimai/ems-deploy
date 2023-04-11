@@ -59,7 +59,7 @@
         block: |
           local   all             all             	                   md5
           host    all             all             0.0.0.0/0                md5
-          host    replication     replicant       0.0.0.0/0                md5
+          host    replication     postgres        0.0.0.0/0                password
       register: result_pg_hba
 
     - name: Add new configuration to postgresql.conf
@@ -97,7 +97,34 @@
 #    - name: restart postgres
 #      service: name=postgresql state=restarted
 
-- name: Play for EMS master db
-  hosts: event_catalogue_master
-  
+- name: Play for Event Catalogue backup host
+  hosts: event_catalogue_backup
+  become: yes
+
+  tasks:
+    - name: Stop postgresql service
+      service:
+        name: postgresql
+        state: stopped
+    
+    - name: Clean data directory
+      shell: /bin/rm -rf /var/lib/pgsql/data/*
+
+    - name: Create .pgpass file
+      become_user: postgres
+      copy:
+        dest: ~/.pgpass
+        mode: "700"
+        content: |
+           *:*:*:postgres:example
+
+    - name: Enable replication / TODO
+      become_user: postgres
+      shell: "pg_basebackup -h 10.254.0.202 -p 5432 -U postgres -D /var/lib/pgsql/data/ -Fp -Xs -R"
+
+    - name: Start postgresql service
+      service:
+        name: postgresql
+        state: started
+
 

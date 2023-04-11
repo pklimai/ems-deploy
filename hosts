@@ -8,7 +8,7 @@ ems2
 [event_catalogue_master]
 ems1
 
-[event_catalogue_replica]
+[event_catalogue_backup]
 ems2
 
 [haproxy]
