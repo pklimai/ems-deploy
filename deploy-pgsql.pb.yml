@@ -32,10 +32,10 @@
       with_items:
         - postgresql
 
-    - name: Set password Linux user
+    - name: Set password for Linux user
       ansible.builtin.user:
         name: postgres
-        password: $6$VsaRMZ7Zzj3Mb1ux$Nc6pKq0aQD5CZ74yAGKmRt2fSftOJfNhYF/YJEiSRwYiLJ/BlqjEHZkqNXneuCuEJwpw2Y/qbEAPQnx7itnXX.
+        password: "{{ postgres_hashed_password }}"
   
     # Is it needed ?
     - name: Set password for postgres user
@@ -48,8 +48,8 @@
         db: postgres
         name: postgres
         password: example
-        login_user: postgres
-        login_password: example 
+        # login_user: postgres
+        login_password: "{{ psql_password }}" 
 
     - name: Add configuration to pg_hba.conf
       blockinfile:
@@ -60,22 +60,38 @@
           local   all             all             	                   md5
           host    all             all             0.0.0.0/0                md5
           host    replication     replicant       0.0.0.0/0                md5
+      register: result_pg_hba
 
     - name: Add new configuration to postgresql.conf
       blockinfile:
         dest: /var/lib/pgsql/data/postgresql.conf
         block: |
           listen_addresses = '*'
+      register: result_postgresql_conf
 
-    - name: Restart postgres
-      service: "name={{ item }} state=restarted"
-      with_items:
-        - postgresql
+    - name: Restart postgres if configs changed
+      service: 
+        name: postgresql 
+        state: restarted
+      when: result_pg_hba.changed or result_postgresql_conf.changed
 
-    - name: Create new database
+    - name: Ensure Event Catalogue database is created
       postgresql_db: 
-        name: event_db
-        login_password: example
+        name: "{{ event_catalogue_db_name }}"
+        login_password: "{{ psql_password }}"
+
+    - name: Upload SQL script file
+      copy:
+        src: files/schema.sql
+        dest: /var/tmp/schema.sql
+
+    - name: Apply SQL schema file
+      community.postgresql.postgresql_script:
+        db: "{{ event_catalogue_db_name }}"
+        path: /var/tmp/schema.sql
+        login_password: "{{ psql_password }}"
+
+
 
 #  handlers:
 #    - name: restart postgres
