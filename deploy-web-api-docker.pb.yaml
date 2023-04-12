@@ -55,7 +55,6 @@
         - 80:8080
       volumes:
         - /var/tmp/{{ inventory_hostname }}-config.yaml:/root/event-config.yaml   
-      # rm ?  
-
+      restart_policy: always
 
 
