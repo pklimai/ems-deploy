@@ -12,6 +12,10 @@ ems2
 ems1 vrrp_priority=101
 ems2 vrrp_priority=100
 
+[web_api]
+ems1
+ems2
+
 [all:vars]
 ansible_user=lab 
 ansible_password=lab123

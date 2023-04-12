@@ -1,0 +1,61 @@
+- name: Deploy Docker and EMS Web UI, REST API
+  hosts: web_api
+  become: yes
+
+  tasks:
+  - name: Add docker repo
+    shell: sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+  - name: Install Docker
+    dnf: 
+      name: docker-ce
+      state: present
+
+  - name: Enable Docker service
+    service: 
+      name: docker 
+      state: started 
+      enabled: yes
+  
+  - name: Copy EMS image from deployment host
+    copy:
+      src: files/nica-emd_buildindocker.tar
+      dest: /var/tmp/nica-emd_buildindocker.tar
+
+  - name: Load EMS container image from tarball
+    docker_image:
+      name: nica-emd:buildindocker
+      load_path: /var/tmp/nica-emd_buildindocker.tar
+      state: present
+      source: load
+
+  - name: Create directory for config files
+    file:
+      path: configs/
+      state: directory
+    run_once: yes
+    delegate_to: localhost
+
+  - name: Generate config files
+    template:
+      src: templates/ems-config.yaml
+      dest: configs/{{ inventory_hostname }}-config.yaml
+    delegate_to: localhost
+
+  - name: Copy config files
+    copy:
+      src: configs/{{ inventory_hostname }}-config.yaml
+      dest: /var/tmp/{{ inventory_hostname }}-config.yaml
+
+  - name: Create EMS Web/API container
+    docker_container:
+      name: ems-web-api
+      image: nica-emd:buildindocker
+      ports:
+        - 80:8080
+      volumes:
+        - /var/tmp/{{ inventory_hostname }}-config.yaml:/root/event-config.yaml   
+      # rm ?  
+
+
+

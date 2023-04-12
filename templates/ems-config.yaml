@@ -5,13 +5,13 @@ event_db:
   user: postgres
   password: "{{ psql_password }}"
 
-condition_db:
-  #host: 192.168.65.52
-  host: 159.93.221.14
-  port: 5001
-  db_name: bmn_db
-  user: user
-  password: user_pass
+# condition_db:
+#   #host: 192.168.65.52
+#   host: 159.93.221.14
+#   port: 5001
+#   db_name: bmn_db
+#   user: user
+#   password: user_pass
 
 database_auth: True
 
