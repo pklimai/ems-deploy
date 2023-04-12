@@ -1,0 +1,21 @@
+- name: Test EMS deployment
+  hosts: event_catalogue_master
+  become: yes
+
+  tasks:
+  - name: Query database for sync status
+    postgresql_query:
+      db: postgres
+      query: SELECT client_addr, state FROM pg_stat_replication;
+      login_password: "{{ psql_password }}"
+    register: result
+
+  - debug:
+      var: result.query_result
+
+  - fail:
+    when: result.query_result[0].state != 'streaming'
+
+  - debug:
+      msg: "Tests passed, systems seems to have been deployed fine."
+
