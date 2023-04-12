@@ -11,11 +11,7 @@ ems1
 [event_catalogue_backup]
 ems2
 
-[haproxy]
-ems1
-ems2
-
-[keepalived]
-ems1
-ems2
+[vrrp]
+ems1 vrrp_priority=101
+ems2 vrrp_priority=100
 
