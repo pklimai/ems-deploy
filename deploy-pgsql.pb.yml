@@ -3,9 +3,6 @@
   hosts: event_catalogue
   become: yes
 
-#  vars_files:
-#    - vars.yml
-
   tasks:
     - name: Install packages
       dnf: "name={{ item }} state=present"
@@ -93,11 +90,7 @@
 
 
 
-#  handlers:
-#    - name: restart postgres
-#      service: name=postgresql state=restarted
-
-- name: Play for Event Catalogue backup host
+- name: Enable replication on Event Catalogue backup host
   hosts: event_catalogue_backup
   become: yes
 
@@ -107,10 +100,10 @@
         name: postgresql
         state: stopped
     
-    - name: Clean data directory
+    - name: Clean data directory, leaving the directory itself
       shell: /bin/rm -rf /var/lib/pgsql/data/*
 
-    - name: Create .pgpass file
+    - name: Create .pgpass file for pg_basebackup
       become_user: postgres
       copy:
         dest: ~/.pgpass

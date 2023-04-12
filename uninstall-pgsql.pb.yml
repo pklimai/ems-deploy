@@ -1,0 +1,30 @@
+- name: Uninstall PostgreSQL on Event Catalogue hosts
+  hosts: event_catalogue
+  become: yes
+
+  tasks:
+
+    - name: Stop postgresql service
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: Uninstall packages
+      dnf: "name={{ item }} state=absent"
+      with_items:
+        - postgresql
+        - postgresql-server
+
+    - name: Uninstall Python packages
+      pip: "name={{ item }}  state=absent"
+      with_items:
+        - psycopg2-binary
+
+    - name: Remove data directory
+      become_user: postgres
+      file:
+        path: /var/lib/pgsql/data
+        state: absent
+    
+    # Leave user 'postgres' for now
+    
