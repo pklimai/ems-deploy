@@ -1,9 +1,6 @@
+[event_catalogue]
 ems1 ansible_host=10.254.0.202
 ems2 ansible_host=10.254.0.203
-
-[event_catalogue]
-ems1
-ems2
 
 [event_catalogue_master]
 ems1
@@ -15,3 +12,13 @@ ems2
 ems1 vrrp_priority=101
 ems2 vrrp_priority=100
 
+[all:vars]
+ansible_user=lab 
+ansible_password=lab123
+
+event_catalogue_db_name=event_db
+
+# password for 'postgres' (default) user
+psql_password=example
+
+postgres_hashed_password="$6$VsaRMZ7Zzj3Mb1ux$Nc6pKq0aQD5CZ74yAGKmRt2fSftOJfNhYF/YJEiSRwYiLJ/BlqjEHZkqNXneuCuEJwpw2Y/qbEAPQnx7itnXX."
