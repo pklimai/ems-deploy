@@ -22,7 +22,7 @@
     register: postgres_data
 
   - name: Initialize PostgreSQL
-    shell: "postgresql-setup initdb"
+    command: "postgresql-setup initdb"
     when: not postgres_data.stat.exists
 
   - name: Start and enable services
@@ -42,6 +42,7 @@
       db: postgres
       name: postgres
       password: "{{ psql_password }}"
+      login_password: "{{ psql_password }}"    # Needed when run second time
 
   - name: Add configuration to pg_hba.conf
     blockinfile:
@@ -67,6 +68,59 @@
       state: restarted
     when: result_pg_hba.changed or result_postgresql_conf.changed
 
+################################################################################################
+
+- name: Enable replication on Event Catalogue backup host
+  hosts: event_catalogue_backup
+  become: yes
+
+  tasks:
+
+  - name: Stop postgresql service
+    service:
+      name: postgresql
+      state: stopped
+  
+  - name: Clean data directory, leaving the directory itself
+    shell: "/bin/rm -rf /var/lib/pgsql/data/*"
+
+  - name: Create .pgpass file for pg_basebackup
+    become_user: postgres
+    copy:
+      dest: ~/.pgpass
+      mode: "700"
+      content: |
+          *:*:*:postgres:{{ psql_password }}
+
+  - name: Figure out master server IP address
+    set_fact:
+      master_ip: "{{ hostvars[ groups['event_catalogue_master'][0] ]['ansible_host'] }}"
+
+  - name: Enable replication
+    become_user: postgres
+    command: "pg_basebackup -h {{ master_ip }} -p 5432 -U postgres -D /var/lib/pgsql/data/ -Fp -Xs -R"
+
+  - name: Start postgresql service
+    service:
+      name: postgresql
+      state: started
+
+  # Seems that we need to keep the file.
+  # - name: Remove .pgpass file
+  #   become_user: postgres
+  #   file: 
+  #     path: ~/.pgpass
+  #     state: absent
+
+################################################################################################
+
+- name: Create event database 
+  hosts: event_catalogue_master
+  # (should replicate to backup in HA scenario)
+  become: yes
+   
+  tasks:
+
   - name: Ensure Event Catalogue database is created
     postgresql_db: 
       name: "{{ event_catalogue_db_name }}"
@@ -81,37 +135,5 @@
     community.postgresql.postgresql_script:
       db: "{{ event_catalogue_db_name }}"
       path: /var/tmp/schema.sql
-      login_password: "{{ psql_password }}"
-
-
-- name: Enable replication on Event Catalogue backup host
-  hosts: event_catalogue_backup
-  become: yes
-
-  tasks:
-
-  - name: Stop postgresql service
-    service:
-      name: postgresql
-      state: stopped
-  
-  - name: Clean data directory, leaving the directory itself
-    shell: /bin/rm -rf /var/lib/pgsql/data/*
-
-  - name: Create .pgpass file for pg_basebackup
-    become_user: postgres
-    copy:
-      dest: ~/.pgpass
-      mode: "700"
-      content: |
-          *:*:*:postgres:{{ psql_password }}
-
-  - name: Enable replication
-    become_user: postgres
-    shell: "pg_basebackup -h 10.254.0.202 -p 5432 -U postgres -D /var/lib/pgsql/data/ -Fp -Xs -R"
-
-  - name: Start postgresql service
-    service:
-      name: postgresql
-      state: started
+      login_password: "{{ psql_password }}"  
 
