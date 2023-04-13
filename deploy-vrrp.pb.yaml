@@ -1,4 +1,4 @@
-- name: Deploy HAProxy
+- name: Deploy keepalived
   hosts: vrrp
   become: yes
 
@@ -15,69 +15,6 @@
   
   # sudo dnf update -- is it needed?
 
-  # - name: Install packages
-  #   dnf: "name={{ item }} state=present"
-  #   with_items:
-  #     - epel-release
-  #     - haproxy
-
-  # - name: Set HAProxy configuration
-  #   copy:
-  #     dest: /etc/haproxy/haproxy.cfg
-  #     content: |
-  #       global
-  #           log         127.0.0.1 local2
-  #           chroot      /var/lib/haproxy
-  #           pidfile     /var/run/haproxy.pid
-  #           maxconn     4000
-  #           user        haproxy
-  #           group       haproxy
-  #           daemon
-  #           stats socket /var/lib/haproxy/stats
-  #           ssl-default-bind-ciphers PROFILE=SYSTEM
-  #           ssl-default-server-ciphers PROFILE=SYSTEM
-
-  #       defaults
-  #           mode                    http
-  #           log                     global
-  #           option                  httplog
-  #           option                  dontlognull
-  #           option http-server-close
-  #           option forwardfor       except 127.0.0.0/8
-  #           option                  redispatch
-  #           retries                 3
-  #           timeout http-request    10s
-  #           timeout queue           1m
-  #           timeout connect         10s
-  #           timeout client          1m
-  #           timeout server          1m
-  #           timeout http-keep-alive 10s
-  #           timeout check           10s
-  #           maxconn                 3000
-
-  #       frontend pg_balancer
-  #           mode tcp
-  #           bind {{ ansible_host }}:5000
-  #           default_backend     pg_servers
-
-  #       backend pg_servers
-  #           mode        tcp
-  #           balance     roundrobin
-  #           server  ems  {{ ansible_host }}:5432  check    
-
-  # - name: Start HAProxy service
-  #   service:
-  #     name: haproxy
-  #     state: started
-  #     enabled: yes
-
-
-- name: Deploy keepalived
-  hosts: vrrp
-  become: yes
-
-  tasks:
-
   - name: Install keepalived
     dnf: "name={{ item }} state=present"
     with_items:
@@ -90,22 +27,22 @@
         global_defs {
           router_id LVS_DEVEL
           vrrp_skip_check_adv_addr
-          #vrrp_strict  # commenting this out!
+          #vrrp_strict               # commenting this out - breaks stuff!
           vrrp_garp_interval 0
           vrrp_gna_interval 0
         }
         vrrp_instance VRRP_1 {
           state MASTER
-          interface ens160  # TODO set variable
+          interface "{{ vrrp_interface }}"
           virtual_router_id 10
-          priority {{ vrrp_priority }}               # and 100 on alma3
+          priority "{{ vrrp_priority }}"
           advert_int 1
           authentication {
               auth_type PASS
               auth_pass ems-vvrp-p@ssw0rd
           }
           virtual_ipaddress {
-              10.254.0.210/24  # TODO set variable
+              "{{ vrrp_ip_mask }}"
           }
         }
 
@@ -114,4 +51,3 @@
       name: keepalived
       state: started
       enabled: yes
-

@@ -26,3 +26,7 @@ event_catalogue_db_name=event_db
 psql_password=example
 
 postgres_hashed_password="$6$VsaRMZ7Zzj3Mb1ux$Nc6pKq0aQD5CZ74yAGKmRt2fSftOJfNhYF/YJEiSRwYiLJ/BlqjEHZkqNXneuCuEJwpw2Y/qbEAPQnx7itnXX."
+
+[vrrp:vars]
+vrrp_interface=ens160
+vrrp_ip_mask=10.254.0.210/24
