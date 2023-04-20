@@ -19,13 +19,13 @@
   
   - name: Copy EMS image from deployment host
     copy:
-      src: files/nica-emd_buildindocker.tar
-      dest: /var/tmp/nica-emd_buildindocker.tar
+      src: files/nica-ems_buildindocker.tar
+      dest: /var/tmp/nica-ems_buildindocker.tar
 
   - name: Load EMS container image from tarball
     docker_image:
-      name: nica-emd:buildindocker
-      load_path: /var/tmp/nica-emd_buildindocker.tar
+      name: nica-ems:buildindocker
+      load_path: /var/tmp/nica-ems_buildindocker.tar
       state: present
       source: load
 
@@ -50,7 +50,7 @@
   - name: Create EMS Web/API container
     docker_container:
       name: ems-web-api
-      image: nica-emd:buildindocker
+      image: nica-ems:buildindocker
       ports:
         - 80:8080
       volumes:
